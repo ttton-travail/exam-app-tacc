@@ -1,0 +1,38 @@
+# 改行コード方針：テキストは LF に統一する。
+# 既存ファイルはそのまま（差分は起こさない）。今後 Git を通るファイルが LF 基準で扱われる。
+# 一括で既存も LF 化したい場合は別途 `git add --renormalize .` を実行する。
+
+# デフォルト：テキストは自動判定し、チェックアウト時 LF に揃える
+* text=auto eol=lf
+
+# 主要なテキスト形式を明示的に LF 固定
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.cjs   text eol=lf
+*.json  text eol=lf
+*.css   text eol=lf
+*.scss  text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+*.sql   text eol=lf
+*.svg   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.txt   text eol=lf
+*.env   text eol=lf
+
+# バイナリは改行変換しない（誤変換による破損を防ぐ）
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.pdf   binary

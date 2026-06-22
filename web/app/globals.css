@@ -1,0 +1,84 @@
+/* ===========================
+  グローバルCSS
+  globals.css
+=========================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: "Noto Sans JP", "Hiragino Sans", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: #F8FAFC;
+  color: #1E293B;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* ---------------------------------------------
+  ボタンのフォーカス枠制御
+  ・マウス／タップ時の黒い枠は消す
+  ・キーボード操作時（:focus-visible）だけは枠を出してアクセシビリティを確保
+--------------------------------------------- */
+button {
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+button:focus-visible {
+  outline: 2px solid #C67C00;
+  outline-offset: 2px;
+}
+
+
+/* ---------------------------------------------
+  ローディングスピナー
+  ボタン内・カード内どちらでも使える小さな回転インジケータ
+--------------------------------------------- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -0.15em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 1.6s; }
+}
+
+
+/* ---------------------------------------------
+  ローディングスピナー（問題生成中の表示）
+--------------------------------------------- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}

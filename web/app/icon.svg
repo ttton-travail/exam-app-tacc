@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="icon_katate" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-2 {
+        mask: url(#mask);
+      }
+
+      .cls-3 {
+        fill: #2563eb;
+      }
+
+      .cls-4 {
+        stroke-width: 125px;
+      }
+
+      .cls-4, .cls-5, .cls-6 {
+        stroke: #fff;
+      }
+
+      .cls-4, .cls-5, .cls-6, .cls-7 {
+        fill: none;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-5 {
+        stroke-width: 60px;
+      }
+
+      .cls-6 {
+        stroke-width: 95px;
+      }
+
+      .cls-7 {
+        stroke: #000;
+        stroke-width: 10px;
+      }
+
+      .cls-8 {
+        filter: url(#luminosity-noclip);
+      }
+    </style>
+    <filter id="luminosity-noclip" x="363.56" y="392.36" width="95" height="344.25" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feFlood flood-color="#fff" result="bg"/>
+      <feBlend in="SourceGraphic" in2="bg"/>
+    </filter>
+    <mask id="mask" x="363.56" y="392.36" width="95" height="344.25" maskUnits="userSpaceOnUse">
+      <g class="cls-8">
+        <line class="cls-7" x1="411.06" y1="393.22" x2="411.06" y2="736.61"/>
+      </g>
+    </mask>
+  </defs>
+  <rect id="maru_bleu" class="cls-3" width="1024" height="1024" rx="189.86" ry="189.86"/>
+  <g id="ume-2" data-name="ume">
+    <g id="blpetit">
+      <g id="katate">
+        <g id="katate-2" data-name="katate">
+          <line id="ude" class="cls-4" x1="138.78" y1="839.32" x2="875.22" y2="839.32"/>
+          <g id="hira">
+            <line class="cls-5" x1="850.42" y1="824.29" x2="850.42" y2="344.37"/>
+            <line class="cls-5" x1="536.91" y1="618.72" x2="536.91" y2="170.51"/>
+            <line class="cls-5" x1="641.41" y1="618.72" x2="641.41" y2="122.24"/>
+            <line class="cls-5" x1="745.92" y1="618.72" x2="745.92" y2="191.19"/>
+            <g class="cls-2">
+              <line class="cls-6" x1="411.06" y1="735.75" x2="411.06" y2="392.36"/>
+            </g>
+          </g>
+        </g>
+      </g>
+      <g id="_1click" data-name="1click">
+        <g>
+          <polygon class="cls-1" points="152.22 746.07 152.22 703.6 334.77 703.6 334.77 718.32 169.58 718.32 169.58 746.07 152.22 746.07"/>
+          <polygon class="cls-1" points="175.71 674.15 171.63 668.87 171.77 668.87 152.22 643.57 152.22 598.65 171.8 573.54 171.63 573.54 175.71 568.26 209.92 568.26 209.92 582.98 190.52 582.98 174.69 603.18 174.69 639.04 190.52 659.43 296.22 659.43 312.3 639.04 312.3 603.18 296.22 582.98 274.26 582.98 274.26 568.26 311.03 568.26 315.37 573.54 315.19 573.54 334.77 598.65 334.77 643.57 315.22 668.87 315.37 668.87 311.03 674.15 175.71 674.15"/>
+          <rect class="cls-1" x="152.22" y="523.9" width="182.55" height="14.72"/>
+          <path class="cls-1" d="M188.73,494.27v-14.72h146.04v14.72h-146.04ZM152.22,494.27v-14.72h20.17v14.72h-20.17Z"/>
+          <polygon class="cls-1" points="207.63 449.91 200.33 440.47 200.22 440.47 188.73 425.94 188.73 389.13 200.22 374.41 200.33 374.41 207.63 364.97 238.01 364.97 238.01 379.69 221.92 379.69 211.2 393.47 211.2 421.41 221.92 435.19 301.58 435.19 312.3 421.41 312.3 393.47 301.58 379.69 283.45 379.69 283.45 364.97 315.88 364.97 323.17 374.41 323.28 374.41 334.77 389.13 334.77 425.94 323.28 440.47 323.26 440.47 322.27 441.64 315.88 449.91 207.63 449.91"/>
+          <polygon class="cls-1" points="152.22 334.77 152.22 320.05 240.82 320.05 197.67 264.93 188.73 264.93 188.73 250.21 212.22 250.21 219.52 259.64 219.62 259.64 240.56 286.45 334.77 246.24 334.77 265.5 251.79 300.79 266.86 320.05 334.77 320.05 334.77 334.77 152.22 334.77"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
