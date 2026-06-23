@@ -8,6 +8,7 @@
 // ===========================
 
 import { GEMINI_MODEL, GEMINI_MAX_TOKENS, GEMINI_TEMPERATURE, GEMINI_THINKING_BUDGET } from '@/lib/config'
+import { buildChoiceRepairPrompt } from '@/lib/prompts/tax'
 import type { QuizData, Question, ChoiceId } from '@/types/quiz'
 
 const log = (stage: string, data?: unknown) => console.log(`[gemini] ${stage}`, data ?? '')
@@ -302,11 +303,8 @@ function normalizeQuestion(raw: RawQuestion): Question {
     }
 }
 
-/** Gemini APIにプロンプトを送り、内部形式のQuizDataを返す */
-export async function generateQuiz(prompt: string): Promise<QuizData> {
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) throw new Error('GEMINI_API_KEY が設定されていません')
-
+/** Gemini に1回プロンプトを送り、生のテキスト（JSON文字列）を返す。 */
+async function callGeminiRaw(prompt: string, apiKey: string): Promise<string> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
 
     log('APIリクエスト送信', { model: GEMINI_MODEL })
@@ -340,6 +338,8 @@ export async function generateQuiz(prompt: string): Promise<QuizData> {
 
     log('生テキスト先頭', rawText.slice(0, 120))
     log('finishReason', finishReason)
+    // 実コスト把握用：input/output/thinking のトークン数を毎回ログに出す
+    log('usage', data.usageMetadata)
 
     // 出力がトークン上限で途中打ち切りされたケースを明示的に検知
     if (finishReason === 'MAX_TOKENS') {
@@ -352,7 +352,11 @@ export async function generateQuiz(prompt: string): Promise<QuizData> {
         log('空レスポンス', { finishReason, safety: candidate?.safetyRatings })
         throw new Error(`空のレスポンスが返されました（finishReason: ${finishReason}）`)
     }
+    return rawText
+}
 
+/** 生テキストから RawQuestion[] を取り出す（破損は段階的に修復してから救出する）。 */
+function parseRawQuestions(rawText: string): RawQuestion[] {
     const cleaned = rawText
         .replace(/^```json\s*/i, '')
         .replace(/^```\s*/i, '')
@@ -402,8 +406,92 @@ export async function generateQuiz(prompt: string): Promise<QuizData> {
         log('questions配列が見つからない', parsed)
         throw new Error('questions配列が見つかりませんでした')
     }
+    return parsed.questions
+}
 
-    const questions = parsed.questions.map(normalizeQuestion)
+/**
+ * 選択肢が「2個未満・空・重複」のいずれかなら不備とみなす（正規化して比較）。
+ * 金額・率の0埋めや重複（同じ金額が複数）をまとめて検出できる。
+ */
+function hasProblematicChoices(q: Question): boolean {
+    const norm = (s: string) => (typeof s === 'string' ? s : '').replace(/\s+/g, '')
+    const texts = q.choices.map((c) => norm(c.text))
+    if (texts.length < 2) return true
+    if (texts.some((t) => t === '')) return true
+    return new Set(texts).size < texts.length
+}
+
+/**
+ * 不備のある問題だけ choices/answer/explanation を1リクエストで作り直し、id でマージする。
+ * 作り直し後も不備が残る問題は、悪化を避けて元の選択肢のまま残す。
+ */
+async function repairProblematicChoices(
+    all: Question[],
+    bad: Question[],
+    apiKey: string,
+): Promise<Question[]> {
+    const prompt = buildChoiceRepairPrompt(bad.map((q) => ({ id: q.id, question: q.question })))
+    const rawText = await callGeminiRaw(prompt, apiKey)
+    const repaired = parseRawQuestions(rawText)
+
+    const byId = new Map<number, RawQuestion>()
+    for (const r of repaired) {
+        if (typeof r.id === 'number' && r.choices) byId.set(r.id, r)
+    }
+    if (byId.size === 0) {
+        log('再生成結果が空→元のまま')
+        return all
+    }
+
+    let fixed = 0
+    const merged = all.map((q) => {
+        const r = byId.get(q.id)
+        if (!r) return q
+        // 作り直した choices を、元の問題文・単元・keywords を保ったまま内部形式へ正規化する。
+        // explanation は再生成側が空なら元のものを使う。
+        const next = normalizeQuestion({
+            id: q.id,
+            unitId: q.unitId,
+            unit: q.unit,
+            question: q.question,
+            choices: r.choices,
+            answer: r.answer,
+            explanation:
+                typeof r.explanation === 'string' && r.explanation.trim() ? r.explanation : q.explanation,
+            keywords: q.keywords,
+        })
+        // 作り直し後も不備（重複・空）が残るなら、元の選択肢を維持して悪化させない
+        if (hasProblematicChoices(next)) {
+            log('再生成後も不備→元の選択肢を維持', { id: q.id })
+            return q
+        }
+        fixed++
+        return next
+    })
+    log('選択肢の再生成完了', { fixed, requested: bad.length })
+    return merged
+}
+
+/** Gemini APIにプロンプトを送り、内部形式のQuizDataを返す */
+export async function generateQuiz(prompt: string): Promise<QuizData> {
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) throw new Error('GEMINI_API_KEY が設定されていません')
+
+    const rawText = await callGeminiRaw(prompt, apiKey)
+    let questions = parseRawQuestions(rawText).map(normalizeQuestion)
     log('パース・正規化成功', { questionCount: questions.length })
+
+    // 選択肢に不備（重複・空）がある問題だけを、1リクエストにまとめて作り直す（最大1回）。
+    // thinking 有効化でも稀に出る 0埋め・重複への最終セーフティネット。
+    const bad = questions.filter(hasProblematicChoices)
+    if (bad.length > 0) {
+        log('選択肢に不備のある問題を検出→再生成', { count: bad.length, ids: bad.map((q) => q.id) })
+        try {
+            questions = await repairProblematicChoices(questions, bad, apiKey)
+        } catch (e) {
+            log('選択肢の再生成に失敗（元のまま継続）', String(e))
+        }
+    }
+
     return { questions }
 }

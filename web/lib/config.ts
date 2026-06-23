@@ -20,8 +20,11 @@ export const GEMINI_MODEL = 'gemini-2.5-flash-lite'
 // Lite は thinking をほぼ使わないが、税法の4択は選択肢・解説が長文になりやすいので余裕を持たせる。
 // 10〜20問でも途中で切れないよう大きめに確保する。
 export const GEMINI_MAX_TOKENS = 16384
-// thinking を抑えて出力本体にトークンを回す（0で実質オフ）。
-export const GEMINI_THINKING_BUDGET = 0
+// 計算問題（税額・控除額・税率など多段計算）の正答率を上げるため thinking を強めに有効化。
+// 0=オフだと Lite は計算を内部で展開できず、選択肢を0埋め・重複させやすい。
+// Lite の有効範囲は 512〜24576。思考トークンは出力レート課金（$0.40/1M）だが 4096 でも +¥0.3/生成程度。
+// 取りこぼしが残るなら 8192 まで上げてよい（-1=動的はコスト不定なので固定値で運用）。
+export const GEMINI_THINKING_BUDGET = 4096
 // 内容保障のため深度は1のままに。
 export const GEMINI_TEMPERATURE = 1
 
