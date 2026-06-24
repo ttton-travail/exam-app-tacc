@@ -49,7 +49,7 @@ export const SUBJECTS: Subject[] = [
             { id: 'tax_income_02', label: '各種所得の金額（利子・配当・不動産・事業・給与ほか）', frequency: '高' },
             { id: 'tax_income_03', label: '譲渡所得・一時所得・雑所得', frequency: '中' },
             { id: 'tax_income_04', label: '損益通算・損失の繰越控除', frequency: '中' },
-            // ★令和7改正：基礎控除・給与所得控除の引上げ／特定親族特別控除の新設を反映すること（tacc-content-audit.md §2,§5）
+            // ★令和7改正（確定・taxLawChanges.ts 参照）：基礎控除48→58万＋令和7/8年分の時限上乗せ、給与所得控除の最低保障55→65万、特定親族特別控除の新設（19-23歳・所得58万超123万以下で最大63万逓減）。
             { id: 'tax_income_05', label: '所得控除（物的控除・人的控除）', frequency: '高' },
             { id: 'tax_income_06', label: '税額計算・税額控除（住宅借入金等特別控除ほか）', frequency: '中' },
             { id: 'tax_income_07', label: '源泉徴収・予定納税・確定申告', frequency: '中' },
@@ -70,7 +70,7 @@ export const SUBJECTS: Subject[] = [
             { id: 'tax_corporate_04', label: '減価償却・繰延資産・リース取引', frequency: '高' },
             { id: 'tax_corporate_05', label: '役員給与・寄附金・交際費等の損金不算入', frequency: '高' },
             { id: 'tax_corporate_06', label: '貸倒損失・引当金・圧縮記帳', frequency: '中' },
-            // ★令和7改正：中小法人の軽減税率（所得10億円超は17%等）の見直しを確認（tacc-content-audit.md §3,§5）
+            // ★令和7改正（確定・taxLawChanges.ts 参照）：中小法人の軽減税率15%を令和9年3月開始事業年度まで2年延長。ただし所得10億円超の事業年度は17%、グループ通算法人は適用除外。
             { id: 'tax_corporate_07', label: '同族会社・別表調整（申告調整）', frequency: '中' },
             { id: 'tax_corporate_08', label: '税額計算・税額控除・申告納付', frequency: '中' },
         ],
@@ -89,7 +89,7 @@ export const SUBJECTS: Subject[] = [
             { id: 'tax_inheritance_04', label: '課税価格・基礎控除・相続税の総額の計算', frequency: '高' },
             { id: 'tax_inheritance_05', label: '税額加算（2割加算）・税額控除（配偶者の税額軽減ほか）', frequency: '中' },
             { id: 'tax_inheritance_06', label: '財産評価（宅地・小規模宅地等の特例）', frequency: '高' },
-            // ★令和5/6改正：相続時精算課税の年110万円基礎控除（生前贈与加算の対象外）を反映（tacc-content-audit.md §4,§5）
+            // ★令和5/6改正（確定・taxLawChanges.ts 参照）：相続時精算課税に年110万円の基礎控除（暦年とは別枠・基礎控除以下は生前贈与加算の対象外）。令和6年1月1日以後の贈与。
             { id: 'tax_inheritance_07', label: '贈与税（暦年課税・相続時精算課税）', frequency: '高' },
             { id: 'tax_inheritance_08', label: '申告・納付（延納・物納）', frequency: '低' },
         ],

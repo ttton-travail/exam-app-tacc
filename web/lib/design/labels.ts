@@ -27,6 +27,12 @@ export const labels = {
         subjectComingSoon: '国税徴収法・地方税ほか 順次追加予定',
         unitLabel: '単元',
         unitNote: '（未選択 = 全単元からランダム）',
+        // 内容タイプ（用語知識／実例判断／計算）。レベルを上げると計算はツリーに自動分岐。
+        contentTypeLabel: '内容タイプ',
+        contentTypeNote: '（何を問うか）',
+        // レベル（実務の判断複雑度）。内容タイプにより選べる範囲が変わる。
+        levelLabel: 'レベル',
+        levelNote: '（判断の複雑さ）',
         countLabel: '問題数',
         // 問題数チップの単位（{n}問）
         countUnit: '{n}問',

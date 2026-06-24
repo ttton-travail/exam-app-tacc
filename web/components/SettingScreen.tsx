@@ -8,10 +8,18 @@
 import { useState, useEffect } from 'react'
 import { design, styles, labels } from '@/lib/design'
 import { useResponsive } from '@/lib/useBreakpoint'
-import { SUBJECTS, SUBJECT_GROUPS } from '@/lib/subjects'
+import {
+  SUBJECTS,
+  SUBJECT_GROUPS,
+  CONTENT_TYPES,
+  LEVELS,
+  resolveFormat,
+  DEFAULT_CONTENT_TYPE,
+  DEFAULT_LEVEL,
+} from '@/lib/subjects'
 import { QUESTION_COUNT_OPTIONS } from '@/lib/config'
 import UiIcon from '@/components/UiIcon'
-import type { QuizSettings } from '@/types/quiz'
+import type { QuizSettings, ContentType, QuestionLevel } from '@/types/quiz'
 
 interface Props {
   settings: QuizSettings
@@ -71,6 +79,25 @@ export default function SettingScreen({
   /** 問題数変更 */
   const handleCountChange = (questionCount: number) => {
     onSettingsChange({ ...settings, questionCount })
+  }
+
+  // 内容タイプ→レベルのカスケード。format は内容タイプ×レベルから resolveFormat で自動導出。
+  // calc×Lv3-4 は内部的に 'tree'、それ以外は 'term'/'judgment'/'calc4'（ユーザーには見せない）。
+  const currentType: ContentType = settings.contentType ?? DEFAULT_CONTENT_TYPE
+  const currentTypeDef = CONTENT_TYPES.find((t) => t.type === currentType) ?? CONTENT_TYPES[0]
+  const availableLevels = currentTypeDef.levels
+  const currentLevel: QuestionLevel = settings.level ?? DEFAULT_LEVEL
+
+  /** 内容タイプ変更（レベルが新タイプの範囲外なら先頭レベルへ寄せる＝カスケード） */
+  const handleContentTypeChange = (type: ContentType) => {
+    const def = CONTENT_TYPES.find((t) => t.type === type) ?? CONTENT_TYPES[0]
+    const level = def.levels.includes(currentLevel) ? currentLevel : def.levels[0]
+    onSettingsChange({ ...settings, contentType: type, level, format: resolveFormat(type, level) })
+  }
+
+  /** レベル変更（format を再導出） */
+  const handleLevelChange = (level: QuestionLevel) => {
+    onSettingsChange({ ...settings, level, format: resolveFormat(currentType, level) })
   }
 
   return (
@@ -148,6 +175,52 @@ export default function SettingScreen({
                 </button>
               )
             })}
+          </div>
+        </section>
+
+        {/** 内容タイプ選択（独立軸：用語知識／実例判断／計算） */}
+        <section style={styles.section}>
+          <label style={styles.label}>
+            {labels.setting.contentTypeLabel}
+            <span style={styles.labelNote}>{labels.setting.contentTypeNote}</span>
+          </label>
+          <div style={styles.chipRow}>
+            {CONTENT_TYPES.map((t) => (
+              <button
+                key={t.type}
+                onClick={() => handleContentTypeChange(t.type)}
+                style={{
+                  ...styles.chipButton,
+                  ...(currentType === t.type ? styles.chipButtonActive : {}),
+                }}
+                title={t.note}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/** レベル選択（内容タイプに連動。計算×Lv3-4 は描画が自動でツリーになる） */}
+        <section style={styles.section}>
+          <label style={styles.label}>
+            {labels.setting.levelLabel}
+            <span style={styles.labelNote}>{labels.setting.levelNote}</span>
+          </label>
+          <div style={styles.chipRow}>
+            {LEVELS.filter((lv) => availableLevels.includes(lv.level)).map((lv) => (
+              <button
+                key={lv.level}
+                onClick={() => handleLevelChange(lv.level)}
+                style={{
+                  ...styles.chipButton,
+                  ...(currentLevel === lv.level ? styles.chipButtonActive : {}),
+                }}
+                title={lv.note}
+              >
+                {lv.label}
+              </button>
+            ))}
           </div>
         </section>
 

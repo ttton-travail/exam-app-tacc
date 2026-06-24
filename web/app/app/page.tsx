@@ -8,7 +8,7 @@
 'use client'
 
 import { useState } from 'react'
-import { DEFAULT_SUBJECT_ID } from '@/lib/subjects'
+import { DEFAULT_SUBJECT_ID, DEFAULT_CONTENT_TYPE, DEFAULT_LEVEL, resolveFormat } from '@/lib/subjects'
 import { DEFAULT_QUESTION_COUNT, DEFAULT_EXAM_FORMAT } from '@/lib/config'
 import { shuffleQuiz } from '@/lib/shuffle'
 import { useDailyLimit } from '@/lib/useDailyLimit'
@@ -30,6 +30,10 @@ export default function Home() {
     unitIds: [],
     questionCount: DEFAULT_QUESTION_COUNT,
     examFormat: DEFAULT_EXAM_FORMAT,
+    // 階層拡張の既定（内容タイプ→レベル→内部形式）。設定UIのカスケードがこれを更新する。
+    contentType: DEFAULT_CONTENT_TYPE,
+    level: DEFAULT_LEVEL,
+    format: resolveFormat(DEFAULT_CONTENT_TYPE, DEFAULT_LEVEL),
   })
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<AnswerMap>({})

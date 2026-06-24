@@ -54,7 +54,13 @@ export interface QuizData {
 /** ツリーの1ノードの選択肢。leadsTo＝この枝を選んだとき次に進むノードID or リーフID */
 export interface TreeNodeChoice {
     text: string
-    leadsTo?: string    // 次ノードID／終端なら省略（または 'leaf_*'）
+    leadsTo?: string    // 次ノードID／終端は 'leaf:<id>'
+    /**
+     * 計算ツリー（calc）で、この枝を選んだときに走行値へ適用する係数・金額（任意）。
+     * 例：簡易課税のみなし仕入率 0.8、税率 0.1 など。runningValue.derive の formula が参照する。
+     * 質的判定ツリーでは未使用（undefined）。
+     */
+    runOperand?: number
 }
 
 /** ツリーの1ノード（N択。N＝分岐点マスタの branches 数） */
@@ -63,6 +69,19 @@ export interface TreeNode {
     question: string        // このノードで判断すべき問い
     choices: TreeNodeChoice[]
     correctIndex: number    // choices のうち正解の枝のインデックス
+}
+
+/** 走行値の定義（計算ツリー用）。base から derive を順に適用して納付税額等を導く。 */
+export interface RunningValue {
+    base: { label: string; value: number }
+    derive: { label: string; formula: string }[]  // 例 [{label:'控除税額',formula:'売上税額 × みなし仕入率'}]
+}
+
+/** 終端リーフ（結果ツリーマップの色分け） */
+export interface TreeLeaf {
+    result: string
+    resultKind: 'ok' | 'ng' | 'partial' | 'alt'
+    reason?: string
 }
 
 /** 1事例＝1ツリー問題 */
@@ -76,6 +95,10 @@ export interface TreeProblem {
     correctPath: string[]   // 正解で辿るノードID列（結果ツリーマップの緑経路）
     explanation: Record<string, string>  // nodeId → 分岐点単位の解説
     keywords: string[]
+    // ↓ 計算ツリー（calc）の任意フィールド。質的判定ツリーでは undefined。
+    runningValue?: RunningValue           // 走行値の起点と導出式
+    leaves?: Record<string, TreeLeaf>     // leafId → 終端結果（結果ツリーマップ用）
+    answer?: Record<string, number>       // 正解到達時の確定値（例 { payable: 600000 }）
 }
 
 /** ユーザーの回答記録（questionId → 選んだ選択肢のID） */

@@ -54,11 +54,10 @@ export const TAX_LAW_CHANGES: TaxLawChange[] = [
         unitIds: ['tax_income_05', 'tax_income_06'],
         title: '基礎控除の引上げ（いわゆる「年収の壁」対応）',
         summary:
-            '所得税の基礎控除を引き上げ（従来48万円）。さらに合計所得金額に応じた時限的な上乗せが設けられた。手取り計算・課税最低限に直結。',
-        effectiveFrom: '令和7年分以後',
-        status: 'verify',
-        verifyNote:
-            '引上げ後の基礎控除額（58万円ベース＋上乗せの段階・対象所得・適用年分の時限）を国税庁の最新資料で確定すること。',
+            '基礎控除を48万円→58万円に引上げ（恒久）。さらに令和7・8年分限定の時限上乗せにより、合計所得金額132万円以下=95万円／132万超336万以下=88万円／336万超489万以下=68万円／489万超655万以下=63万円／655万超2,350万以下=58万円。令和9年分以後は2,350万以下が一律58万円に戻る。2,350万円超は従来どおり段階的に逓減（〜2,400万=48万／〜2,450万=32万／〜2,500万=16万／2,500万超=0）。',
+        effectiveFrom: '令和7年12月1日施行・令和7年分以後（時限上乗せは令和7・8年分のみ）',
+        status: 'reflected',
+        source: 'https://www.nta.go.jp/users/gensen/2025kiso/index.htm',
     },
     {
         id: 'r7_salary_deduction',
@@ -67,10 +66,11 @@ export const TAX_LAW_CHANGES: TaxLawChange[] = [
         subjectId: 'tax_income',
         unitIds: ['tax_income_02', 'tax_income_05', 'tax_income_06'],
         title: '給与所得控除の最低保障額の引上げ',
-        summary: '給与所得控除の最低保障額を引上げ（従来55万円）。給与所得者の課税最低限に影響。',
-        effectiveFrom: '令和7年分以後',
-        status: 'verify',
-        verifyNote: '引上げ後の最低保障額（65万円ベース）と適用範囲を確定すること。',
+        summary:
+            '給与所得控除の最低保障額を55万円→65万円に引上げ（給与収入190万円以下の範囲で影響）。給与所得者の課税最低限が上がる。',
+        effectiveFrom: '令和7年12月1日施行・令和7年分以後',
+        status: 'reflected',
+        source: 'https://www.nta.go.jp/publication/pamph/gensen/0025005-051.pdf',
     },
     {
         id: 'r7_special_relative_deduction',
@@ -80,11 +80,10 @@ export const TAX_LAW_CHANGES: TaxLawChange[] = [
         unitIds: ['tax_income_05', 'tax_income_06'],
         title: '特定親族特別控除の新設',
         summary:
-            '19歳以上23歳未満等の親族について、その親族の合計所得が一定額（従来の扶養控除の48万円）を超えても段階的に控除を受けられる新制度。扶養控除の特定扶養親族（63万円）とは別建て。',
-        effectiveFrom: '令和7年分以後',
-        status: 'verify',
-        verifyNote:
-            '対象年齢・親族の所得要件（例：合計所得58万円超〜の段階）・控除額・特定扶養控除との適用関係を確定すること。分岐マスタ「扶養控除」ノードと整合を取り直す。',
+            '生計を一にする19歳以上23歳未満の親族で、合計所得58万円超123万円以下（給与収入123万超188万以下）の「特定親族」がいる場合、その親族の所得に応じ最大63万円〜3万円を段階的に控除する新制度。控除額は所得58万超85万以下で満額63万円、以降逓減。合計所得58万円以下の場合は従来どおり特定扶養親族として扶養控除63万円（＝こちらは扶養控除側）。「150万円の壁→160万円」対応。',
+        effectiveFrom: '令和7年12月1日施行・令和7年分以後（給与の源泉徴収反映は令和8年1月以後）',
+        status: 'reflected',
+        source: 'https://www.nta.go.jp/taxes/shiraberu/taxanswer/shotoku/1177.htm',
     },
     {
         id: 'r4_short_retirement',
@@ -107,13 +106,12 @@ export const TAX_LAW_CHANGES: TaxLawChange[] = [
         reform: '令和7年度税制改正',
         subjectId: 'tax_corporate',
         unitIds: ['tax_corporate_08'],
-        title: '中小法人の軽減税率の見直し',
+        title: '中小法人の軽減税率の延長・見直し',
         summary:
-            '中小法人の年800万円以下の所得に対する軽減税率（特例15%）について、所得が一定額を超える法人の税率を引上げる等の見直し。',
-        effectiveFrom: '令和7年度改正（適用開始時期は要確認）',
-        status: 'verify',
-        verifyNote:
-            '所得10億円超の中小法人は17%等の見直し有無、特例15%の適用期限、適用除外事業者の基準を現行で確定すること。',
+            '中小法人の年800万円以下の所得に対する軽減税率15%（本則19%）を2年延長し、令和9年3月31日までに開始する事業年度まで適用。ただし所得が年10億円を超える事業年度は当該軽減税率を17%に引上げ。グループ通算制度の適用を受けている法人は本特例の適用除外。',
+        effectiveFrom: '令和7年4月1日以後に開始する事業年度',
+        status: 'reflected',
+        source: 'https://www.chusho.meti.go.jp/zaimu/zeisei/tokurei/houjin_keigen.html',
     },
 
     // ---------------- 消費税（インボイス） ----------------
@@ -165,10 +163,10 @@ export const TAX_LAW_CHANGES: TaxLawChange[] = [
         unitIds: ['tax_inheritance_07'],
         title: '相続時精算課税に年110万円の基礎控除を新設',
         summary:
-            '相続時精算課税を選択した場合でも、毎年110万円までの贈与は基礎控除として課税されず、かつ相続時の加算対象にもならない。',
+            '相続時精算課税を選択した受贈者は、暦年課税の基礎控除とは別枠で、毎年110万円までの贈与は基礎控除として贈与税が課されず、かつその基礎控除以下の部分は相続時の加算（持ち戻し）対象にもならない。基礎控除を超えた部分のみ相続財産に持ち戻して計算する。',
         effectiveFrom: '令和6年1月1日以後の贈与',
-        status: 'pending',
-        verifyNote: '暦年課税の110万円とは別枠。生前贈与加算（下記）との取扱いの違いを問題に織り込む。',
+        status: 'reflected',
+        source: 'https://www.nta.go.jp/taxes/shiraberu/taxanswer/sozoku/4103.htm',
     },
     {
         id: 'r5_gift_addback_7y',

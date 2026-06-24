@@ -40,8 +40,12 @@ create index if not exists idx_questions_tacc_pick
 -- ============================================================
 -- 2) 分岐点マスタ（単元の知識構造を定義する恒久テーブル）
 --    4択・ツリー・解説の3工程が共通参照する土台。1単元=1行。
---    master(jsonb)＝branch_point_master の nodes[]（各 node に branches[]/node_question/
---    legal_basis/verify_flag/verify_note、各 branch に branch/judgment/reason）。
+--    master(jsonb)＝v2（leads_to 完全結線）の trees[]。
+--    各 tree に entry / nodes[] / leaves{}。1単元に複数トピックの木が入るため trees[] は配列。
+--    node: { node_id, node_question, branches[], legal_basis, verify_flag, verify_note }
+--    branch: { branch, judgment, reason, leads_to('<node_id>' | 'leaf:<leaf_id>') }
+--    leaf:  { result, result_kind(ok|ng|partial|alt), reason }
+--    seed 元データ＝docs/税理士向けアプリ基本構想まとめ/branch_master_v2.json（rows[]）。
 -- ============================================================
 create table if not exists tacc_branch_master (
     subject_id     text        not null,               -- 'tax_income' 等（Subject.id）
@@ -75,6 +79,10 @@ create table if not exists tacc_tree_problems (
     correct_path  jsonb       not null,                -- ["node_a","node_b","leaf_ok"]
     explanation   jsonb       not null,                -- {"node_a":"...", "node_b":"..."}
     keywords      jsonb       not null default '[]'::jsonb,
+    -- ↓ 計算ツリー（みなし仕入率・税率等）向けの任意列。判定ツリー（質的）は NULL でよい。
+    running_value jsonb,                                -- 走行値定義 {"base":{"label","value"},"derive":[{"label","formula"}]}
+    leaves        jsonb,                                -- 終端集合 {"<leaf_id>":{"result","result_kind","reason"}}（結果ツリーマップの色分け）
+    answer        jsonb,                                -- 正解到達時の確定値 {"<key>":number}（例 {"payable":600000}）
     base_year     smallint,
     source        text        not null default 'seed', -- 'seed'(事前生成) | 'ai'(将来)
     created_at    timestamptz not null default now()
