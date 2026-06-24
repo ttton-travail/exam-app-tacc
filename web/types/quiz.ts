@@ -18,7 +18,7 @@ export interface Choice {
     text: string
 }
 
-/** 1問の問題 */
+/** 1問の問題（4択。term / judgment / calc4 はこの形式を共用） */
 export interface Question {
     id: number
     unit: string        // 表示用の単元ラベル（例：遺伝子とその働き）
@@ -29,11 +29,53 @@ export interface Question {
     answer: ChoiceId    // 正解の「中身のID」。位置ではない
     explanation: string
     keywords: string[]  // 復習の手がかり。回答時に「キーワード：〜」で表示
+    // ↓ 税理士版の階層拡張用（任意）。4択は既存 questions テーブル＋追加列で保持する。
+    level?: QuestionLevel       // Lv1-4
+    format?: QuestionFormat     // 'term' | 'judgment' | 'calc4'（4択のときは tree 以外）
+    /**
+     * 誤答=どのノードの誤りかのタグ。弱点分野の可視化（「益金不算入の判定が弱い」等）に使う。
+     * 選択肢の「中身ID」→ 踏んだ誤りノードID。正解の選択肢は null。
+     * ChoiceId キーなのでシャッフルしてもタグがズレない。
+     */
+    errorNodeTags?: Record<ChoiceId, string | null>
 }
 
 /** 問題セット（APIレスポンス＝内部形式） */
 export interface QuizData {
     questions: Question[]
+}
+
+// ===========================
+// 分岐ツリー問題（format='tree'・計算・Lv3-4／本アプリの軸）
+// 4択（Question）には収まらないため専用の型＋専用テーブル（tacc_tree_problems）で保持する。
+// 業務処理順に1ノードずつN択回答し、回答後に正解経路と実経路を重ねた結果ツリーマップを表示する。
+// ===========================
+
+/** ツリーの1ノードの選択肢。leadsTo＝この枝を選んだとき次に進むノードID or リーフID */
+export interface TreeNodeChoice {
+    text: string
+    leadsTo?: string    // 次ノードID／終端なら省略（または 'leaf_*'）
+}
+
+/** ツリーの1ノード（N択。N＝分岐点マスタの branches 数） */
+export interface TreeNode {
+    nodeId: string          // 分岐点マスタの node_id と対応（誤答タグ・解説と突合）
+    question: string        // このノードで判断すべき問い
+    choices: TreeNodeChoice[]
+    correctIndex: number    // choices のうち正解の枝のインデックス
+}
+
+/** 1事例＝1ツリー問題 */
+export interface TreeProblem {
+    id: number
+    unit: string            // 表示用の単元ラベル
+    unitId?: string
+    level: QuestionLevel
+    scenario: string        // 事例文（前提条件）
+    nodes: TreeNode[]       // 業務処理順
+    correctPath: string[]   // 正解で辿るノードID列（結果ツリーマップの緑経路）
+    explanation: Record<string, string>  // nodeId → 分岐点単位の解説
+    keywords: string[]
 }
 
 /** ユーザーの回答記録（questionId → 選んだ選択肢のID） */
@@ -64,7 +106,34 @@ export interface Subject {
 export interface Unit {
     id: string
     label: string
+    /** 実務頻度タグ。問題ストック生成の優先順位の基準（「高」から埋める）。暫定。 */
+    frequency?: '高' | '中' | '低'
 }
+
+/**
+ * 出題レベル（実務での判断複雑度。試験基準ではない）。
+ * Lv1=単純な状況で1判断／Lv2=似たケースとの区別／Lv3=複数判断の連鎖／Lv4=複数単元の総合（将来拡張）。
+ * Lv1-2=士補相当、Lv3=士相当を初期目標。
+ */
+export type QuestionLevel = 1 | 2 | 3 | 4
+
+/**
+ * 内容タイプ（設定画面でユーザーが選ぶ「独立軸」）。
+ * 描画形式（4択 / ツリー）は、この内容タイプとレベルから自動で決まる（resolveFormat）。
+ * - 'knowledge' : 用語・知識
+ * - 'judgment'  : 実例判断
+ * - 'calc'      : 計算（Lv1-2は4択＝過程まるごと、Lv3-4はツリー）
+ */
+export type ContentType = 'knowledge' | 'judgment' | 'calc'
+
+/**
+ * 出題形式＝**内部ストックキー**（DB の q_format）。ユーザーは直接選ばない（内容タイプ×レベルから導出）。
+ * - 'term'     : 4択・用語/知識
+ * - 'judgment' : 4択・実例判断
+ * - 'calc4'    : 4択・計算（Lv1-2。精算過程まるごとを四択に＝誤答は1ノードのみ誤り）
+ * - 'tree'     : 分岐ツリー・計算（Lv3-4。業務処理順に1ノードずつN択回答＋結果ツリーマップ。本アプリの軸）
+ */
+export type QuestionFormat = 'term' | 'judgment' | 'calc4' | 'tree'
 
 /** 設定画面で選んだ値 */
 export interface QuizSettings {
@@ -72,4 +141,9 @@ export interface QuizSettings {
     unitIds: string[]   // 空配列 = すべての単元
     questionCount: number
     examFormat: ExamFormat
+    // ↓ 階層拡張（科目→単元→内容タイプ→レベル）。当面は任意（未指定=おまかせ）。
+    //   設定UIの配線は次タスク。型・定数の土台のみ先行。
+    contentType?: ContentType   // 設定画面で選ぶ独立軸（用語知識/実例判断/計算）
+    level?: QuestionLevel
+    format?: QuestionFormat      // 内部キー。通常は resolveFormat(contentType, level) で導出
 }
