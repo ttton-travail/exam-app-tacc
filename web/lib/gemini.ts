@@ -7,7 +7,15 @@
 // この境界で1回だけ正規化する。プロンプト側は従来どおりでよい。
 // ===========================
 
-import { GEMINI_MODEL, GEMINI_MAX_TOKENS, GEMINI_TEMPERATURE, GEMINI_THINKING_BUDGET } from '@/lib/config'
+import {
+    GEMINI_MODEL,
+    GEMINI_MAX_TOKENS,
+    GEMINI_TEMPERATURE,
+    GEMINI_THINKING_BUDGET,
+    GEMINI_REPAIR_MODEL,
+    GEMINI_REPAIR_TEMPERATURE,
+    MAX_CHOICE_REPAIR_ROUNDS,
+} from '@/lib/config'
 import { buildChoiceRepairPrompt } from '@/lib/prompts/tax'
 import type { QuizData, Question, ChoiceId } from '@/types/quiz'
 
@@ -304,10 +312,16 @@ function normalizeQuestion(raw: RawQuestion): Question {
 }
 
 /** Gemini に1回プロンプトを送り、生のテキスト（JSON文字列）を返す。 */
-async function callGeminiRaw(prompt: string, apiKey: string): Promise<string> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
+async function callGeminiRaw(
+    prompt: string,
+    apiKey: string,
+    opts?: { model?: string; temperature?: number },
+): Promise<string> {
+    const model = opts?.model ?? GEMINI_MODEL
+    const temperature = opts?.temperature ?? GEMINI_TEMPERATURE
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
 
-    log('APIリクエスト送信', { model: GEMINI_MODEL })
+    log('APIリクエスト送信', { model, temperature })
 
     const response = await fetch(url, {
         method: 'POST',
@@ -315,7 +329,7 @@ async function callGeminiRaw(prompt: string, apiKey: string): Promise<string> {
         body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
-                temperature: GEMINI_TEMPERATURE,
+                temperature,
                 maxOutputTokens: GEMINI_MAX_TOKENS,
                 responseMimeType: 'application/json',
                 thinkingConfig: { thinkingBudget: GEMINI_THINKING_BUDGET },
@@ -431,7 +445,12 @@ async function repairProblematicChoices(
     apiKey: string,
 ): Promise<Question[]> {
     const prompt = buildChoiceRepairPrompt(bad.map((q) => ({ id: q.id, question: q.question })))
-    const rawText = await callGeminiRaw(prompt, apiKey)
+    // 再生成パスだけ上位モデル（Flash）＋低温で「確実に解かせる」。
+    // 通常生成（Lite）では計算問題を作り直しても直らないため。
+    const rawText = await callGeminiRaw(prompt, apiKey, {
+        model: GEMINI_REPAIR_MODEL,
+        temperature: GEMINI_REPAIR_TEMPERATURE,
+    })
     const repaired = parseRawQuestions(rawText)
 
     const byId = new Map<number, RawQuestion>()
@@ -481,16 +500,32 @@ export async function generateQuiz(prompt: string): Promise<QuizData> {
     let questions = parseRawQuestions(rawText).map(normalizeQuestion)
     log('パース・正規化成功', { questionCount: questions.length })
 
-    // 選択肢に不備（重複・空）がある問題だけを、1リクエストにまとめて作り直す（最大1回）。
-    // thinking 有効化でも稀に出る 0埋め・重複への最終セーフティネット。
-    const bad = questions.filter(hasProblematicChoices)
-    if (bad.length > 0) {
-        log('選択肢に不備のある問題を検出→再生成', { count: bad.length, ids: bad.map((q) => q.id) })
+    // 選択肢に不備（重複・空）のある問題を、無くなるまで上位モデル（Flash）で作り直す。
+    // 計算問題は Lite では作り直しても直らないため、再生成パスだけ Flash＋低温で解かせ、
+    // それでも残るものは最大 MAX_CHOICE_REPAIR_ROUNDS 回まで繰り返す。
+    // 「ユーザーに不備のある問題を出さない」ことを最優先する。
+    for (let round = 1; round <= MAX_CHOICE_REPAIR_ROUNDS; round++) {
+        const bad = questions.filter(hasProblematicChoices)
+        if (bad.length === 0) break
+        log('選択肢に不備のある問題を検出→再生成', { round, count: bad.length, ids: bad.map((q) => q.id) })
         try {
             questions = await repairProblematicChoices(questions, bad, apiKey)
         } catch (e) {
-            log('選択肢の再生成に失敗（元のまま継続）', String(e))
+            // リクエスト自体の失敗は概ね一時的でないため、リトライせず打ち切る。
+            log('選択肢の再生成に失敗（このラウンドで打ち切り）', { round, error: String(e) })
+            break
         }
+    }
+
+    // 上限まで作り直しても不備が残る問題は、ユーザーに出さない（表示から除外する）。
+    // 不備のある問題を見せるより、問題数が少し減る方を選ぶ。
+    const stillBad = questions.filter(hasProblematicChoices)
+    if (stillBad.length > 0) {
+        log('再生成上限後も不備が残るため表示から除外', {
+            count: stillBad.length,
+            ids: stillBad.map((q) => q.id),
+        })
+        questions = questions.filter((q) => !hasProblematicChoices(q))
     }
 
     return { questions }
