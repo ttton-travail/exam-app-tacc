@@ -3,6 +3,7 @@
 // components/ResultScreen.tsx
 // ===========================
 
+import { useState } from 'react'
 import { design, styles, labels } from '@/lib/design'
 import { displayKey } from '@/lib/shuffle'
 import { useResponsive } from '@/lib/useBreakpoint'
@@ -23,6 +24,11 @@ export default function ResultScreen({
 }: Props) {
   const score = questions.filter((q) => answers[q.id] === q.answer).length
   const { r, bp } = useResponsive()
+
+  // 解説は初期は閉じる（全体スクロールを抑える）。問題ごとに開閉する。
+  const [openExpl, setOpenExpl] = useState<Record<number, boolean>>({})
+  const toggleExpl = (id: number) =>
+    setOpenExpl((prev) => ({ ...prev, [id]: !prev[id] }))
 
   return (
     <main style={styles.page}>
@@ -75,13 +81,66 @@ export default function ResultScreen({
                   </p>
                 )}
 
-                <p style={styles.explanation}>💡 {q.explanation}</p>
+                {(() => {
+                  const open = !!openExpl[q.id]
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => toggleExpl(q.id)}
+                        style={styles.explanationToggle}
+                        aria-expanded={open}
+                      >
+                        {open ? labels.result.explanationHide : labels.result.explanationShow}
+                      </button>
 
-                {q.keywords && q.keywords.length > 0 && (
-                  <p style={styles.keywords}>
-                    キーワード：{q.keywords.join('・')}
-                  </p>
-                )}
+                      {open && (
+                        <>
+                          {/* 4択すべての選択肢一覧（正解＝青・選んだ誤答＝朱赤で色分け） */}
+                          <div style={styles.resultChoiceList}>
+                            {q.choices.map((c, i) => {
+                              const isCorrect = c.id === q.answer
+                              const isUser = c.id === userChoiceId
+                              return (
+                                <div
+                                  key={c.id}
+                                  style={{
+                                    ...styles.resultChoiceItem,
+                                    ...(isCorrect ? styles.resultChoiceCorrect : {}),
+                                    ...(isUser && !isCorrect ? styles.resultChoiceUserWrong : {}),
+                                  }}
+                                >
+                                  <span style={styles.resultChoiceKey}>{displayKey(i)}</span>
+                                  <span>{c.text}</span>
+                                  {(isCorrect || isUser) && (
+                                    <span
+                                      style={{
+                                        ...styles.resultChoiceTag,
+                                        color: isCorrect
+                                          ? design.color.correct
+                                          : design.color.incorrect,
+                                      }}
+                                    >
+                                      {isCorrect ? '正解' : 'あなた'}
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          <p style={styles.explanation}>{q.explanation}</p>
+
+                          {q.keywords && q.keywords.length > 0 && (
+                            <p style={styles.keywords}>
+                              キーワード：{q.keywords.join('・')}
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             )
           })}
